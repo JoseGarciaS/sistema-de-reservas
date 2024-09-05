@@ -1,0 +1,35 @@
+# C++ build artifacts
+*.o
+*.obj
+*.exe
+*.dll
+*.lib
+*.pdb
+
+# CMake build directory
+build/
+
+# Visual Studio Code workspace settings
+.vscode/
+
+# Compiled binaries
+bin/
+
+# Dependency directories
+dependencies/
+
+# IDE project files
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# CMake generated files
+CMakeCache.txt
+CMakeFiles/
+CMakeScripts/
+CMakeLists.txt.user
+cmake_install.cmake
+Makefile
+
+imgui.ini
