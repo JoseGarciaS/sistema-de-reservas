@@ -34,3 +34,4 @@ Makefile
 
 imgui.ini
 temp
+.env

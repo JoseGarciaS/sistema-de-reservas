@@ -14,4 +14,5 @@ add_subdirectory(lib)
 target_link_libraries(${PROJECT_NAME} PUBLIC 
     imgui
     d3d11
+    mongo::mongocxx_static
 )

@@ -6,12 +6,19 @@
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
 
+#include <bsoncxx/json.hpp>
+#include <mongocxx/client.hpp>
+#include <mongocxx/instance.hpp>
 #include "imgui.h"
 #include "imgui_impl_win32.h"
 #include "imgui_impl_dx11.h"
 #include <d3d11.h>
 #include <tchar.h>
 #include "app.h"
+
+#include "mongoDBHandler.h"
+#include "envParser.h"
+#include <iostream>
 
 // Data
 static ID3D11Device *g_pd3dDevice = nullptr;
@@ -28,9 +35,24 @@ void CreateRenderTarget();
 void CleanupRenderTarget();
 LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam);
 
+envParser *env = envParser::getInstance();
+mongoDBHandler *dbHandler = mongoDBHandler::getInstance();
+
 // Main code
 int main(int, char **)
 {
+
+    const string uri = env->getValue("DB_URI");
+
+    try
+    {
+        dbHandler->connect(uri);
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << "Exception: " << e.what() << std::endl;
+    }
+
     // Create application window
     // ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr};

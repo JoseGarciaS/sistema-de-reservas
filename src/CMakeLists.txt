@@ -1,17 +1,14 @@
-# set(SOURCES
-#     main.cpp
-#     app.cpp
-# )
-
 file(GLOB_RECURSE SOURCES CONFIGURE_DEPENDS
     "${CMAKE_CURRENT_SOURCE_DIR}/*.cpp"
-    "${CMAKE_CURRENT_SOURCE_DIR}/windows/*.cpp"
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
 
-target_include_directories(${PROJECT_NAME} PRIVATE 
+target_include_directories(${PROJECT_NAME} PUBLIC 
     ${CMAKE_CURRENT_SOURCE_DIR}
     ${CMAKE_CURRENT_SOURCE_DIR}/windows
+    ${CMAKE_CURRENT_SOURCE_DIR}/mongodb
+    ${CMAKE_CURRENT_SOURCE_DIR}/envParser
 )
 
+configure_file(${CMAKE_SOURCE_DIR}/.env ${CMAKE_BINARY_DIR}/src/Release/.env COPYONLY)
