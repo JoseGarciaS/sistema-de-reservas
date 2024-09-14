@@ -4,7 +4,7 @@
 #include <mongocxx/instance.hpp>
 #include <bsoncxx/document/view.hpp>
 #include <bsoncxx/document/value.hpp>
-
+#include <bsoncxx/types.hpp>
 using namespace std;
 
 mongoDBHandler *mongoDBHandler::instance = nullptr;
@@ -76,14 +76,19 @@ bool mongoDBHandler::ping()
     return false;
 }
 
-void mongoDBHandler::createDocument(const string &collectionName, const bsoncxx::document::view &document)
+void mongoDBHandler::createDocument(const string &collectionName, const bsoncxx::v_noabi::document::value &document)
 {
     if (connection != nullptr)
     {
         auto db = connection->database("Reservas");
         auto collection = db.collection(collectionName);
 
-        collection.insert_one(document);
+        auto insert_one_result = collection.insert_one(document.view());
+
+        assert(insert_one_result);
+        auto doc_id = insert_one_result->inserted_id();
+        assert(doc_id.type() == bsoncxx::type::k_oid);
+        std::cout << "Inserted document ID: " << doc_id.get_oid().value.to_string() << std::endl;
     }
 }
 

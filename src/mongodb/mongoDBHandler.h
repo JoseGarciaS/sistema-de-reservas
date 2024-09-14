@@ -19,7 +19,7 @@ public:
   void disconnect();
 
   bool ping();
-  void createDocument(const string &collectionName, const bsoncxx::document::view &document);
+  void createDocument(const string &collectionName, const bsoncxx::v_noabi::document::value &document);
   void readDocument(const string &collectionName, const bsoncxx::document::view &filter);
   void updateDocument(const string &collectionName, const bsoncxx::document::view &filter, const bsoncxx::document::view &update);
   void deleteDocument(const string &collectionName, const bsoncxx::document::view &filter);
