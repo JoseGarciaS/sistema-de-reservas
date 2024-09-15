@@ -5,7 +5,13 @@
 #include <bsoncxx/document/view.hpp>
 #include <bsoncxx/document/value.hpp>
 #include <bsoncxx/types.hpp>
+
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/stream/array.hpp>
+#include <bsoncxx/builder/stream/helpers.hpp>
+
 using namespace std;
+using namespace bsoncxx::builder;
 
 mongoDBHandler *mongoDBHandler::instance = nullptr;
 
@@ -76,7 +82,7 @@ bool mongoDBHandler::ping()
     return false;
 }
 
-void mongoDBHandler::createDocument(const string &collectionName, const bsoncxx::v_noabi::document::value &document)
+void mongoDBHandler::createDocument(const string &collectionName, const bsoncxx::document::value &document)
 {
     if (connection != nullptr)
     {
@@ -92,40 +98,48 @@ void mongoDBHandler::createDocument(const string &collectionName, const bsoncxx:
     }
 }
 
-void mongoDBHandler::readDocument(const string &collectionName, const bsoncxx::document::view &filter)
+boost::optional<bsoncxx::document::value> mongoDBHandler::findDocument(const string &collectionName, const bsoncxx::document::value &filter)
 {
     if (connection != nullptr)
     {
         auto db = connection->database("Reservas");
         auto collection = db.collection(collectionName);
 
-        auto cursor = collection.find(filter);
-
-        for (auto &&doc : cursor)
-        {
-            cout << bsoncxx::to_json(doc) << endl;
-        }
+        auto findOneResult = collection.find_one(filter.view());
+        return findOneResult;
     }
+    return boost::none;
 }
 
-void mongoDBHandler::updateDocument(const string &collectionName, const bsoncxx::document::view &filter, const bsoncxx::document::view &update)
+bool mongoDBHandler::updateDocument(const string &collectionName, const bsoncxx::document::value &filter, const bsoncxx::document::value &update)
 {
     if (connection != nullptr)
     {
         auto db = connection->database("Reservas");
         auto collection = db.collection(collectionName);
 
-        collection.update_one(filter, update);
+        auto updateOneResult = collection.update_one(filter.view(), update.view());
+        assert(updateOneResult);
+
+        bool updateSuccessful = updateOneResult && updateOneResult->modified_count() > 0;
+        return updateSuccessful;
     }
+
+    return false;
 }
 
-void mongoDBHandler::deleteDocument(const string &collectionName, const bsoncxx::document::view &filter)
+bool mongoDBHandler::deleteDocument(const string &collectionName, const bsoncxx::document::value &filter)
 {
     if (connection != nullptr)
     {
         auto db = connection->database("Reservas");
         auto collection = db.collection(collectionName);
 
-        collection.delete_one(filter);
+        auto deleteOneResult = collection.delete_one(filter.view());
+        assert(deleteOneResult);
+
+        bool deleteSuccessful = deleteOneResult && deleteOneResult->deleted_count() == 1;
+        return deleteSuccessful;
     }
+    return false;
 }

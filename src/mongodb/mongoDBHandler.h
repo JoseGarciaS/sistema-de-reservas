@@ -6,8 +6,11 @@
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
 
-using namespace std;
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/stream/array.hpp>
+#include <bsoncxx/builder/stream/helpers.hpp>
 
+using namespace std;
 class mongoDBHandler
 {
 public:
@@ -19,10 +22,10 @@ public:
   void disconnect();
 
   bool ping();
-  void createDocument(const string &collectionName, const bsoncxx::v_noabi::document::value &document);
-  void readDocument(const string &collectionName, const bsoncxx::document::view &filter);
-  void updateDocument(const string &collectionName, const bsoncxx::document::view &filter, const bsoncxx::document::view &update);
-  void deleteDocument(const string &collectionName, const bsoncxx::document::view &filter);
+  void createDocument(const string &collectionName, const bsoncxx::document::value &document);
+  boost::optional<bsoncxx::document::value> findDocument(const string &collectionName, const bsoncxx::document::value &filter);
+  bool updateDocument(const string &collectionName, const bsoncxx::document::value &filter, const bsoncxx::document::value &update);
+  bool deleteDocument(const string &collectionName, const bsoncxx::document::value &filter);
 
 private:
   mongoDBHandler();
