@@ -5,7 +5,7 @@
 // - Getting Started      https://dearimgui.com/getting-started
 // - Documentation        https://dearimgui.com/docs (same as your local docs/ folder).
 // - Introduction, links and more at the top of imgui.cpp
-
+/*
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
@@ -277,4 +277,98 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
         return 0;
     }
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
+}
+*/
+#include "Reservas/SistemaReservas.h"
+#include <iostream>
+
+int main() {
+    std::vector<Mesa> mesas = {
+        Mesa(1, 4),
+        Mesa(2, 2),
+        Mesa(3, 6),
+        Mesa(4, 8)
+    };
+
+    std::vector<Usuario*> usuarios = {
+        new Admin("admin", "admin123"),
+        new Cliente("cliente1", "password1"),
+        new Cliente("cliente2", "password2")
+    };
+    SistemaReservas sistema(mesas, usuarios);
+
+    std::string nombreUsuario, password;
+    Usuario* usuarioLogueado = nullptr;
+
+    while (!usuarioLogueado) {
+        std::cout << "Ingrese su nombre de usuario: ";
+        std::cin >> nombreUsuario;
+        std::cout << "Ingrese su contraseña: ";
+        std::cin >> password;
+
+        usuarioLogueado = sistema.login(nombreUsuario, password);
+    }
+
+    int opcion;
+    do {
+        usuarioLogueado->mostrarMenu();
+        std::cin >> opcion;
+
+        if (usuarioLogueado->getRol() == "admin") {
+            switch (opcion) {
+                case 1:
+                    sistema.mostrarMesasDisponibles();
+                    break;
+                case 2: {
+                    int numeroMesa;
+                    std::cout << "Ingrese el número de mesa a reservar: ";
+                    std::cin >> numeroMesa;
+                    sistema.reservarMesa(numeroMesa);
+                    break;
+                }
+                case 3: {
+                    int numeroMesa;
+                    std::cout << "Ingrese el número de mesa a liberar: ";
+                    std::cin >> numeroMesa;
+                    sistema.liberarMesa(numeroMesa);
+                    break;
+                }
+                case 4: {
+                    int numeroMesa, capacidad;
+                    std::cout << "Ingrese el número de la nueva mesa: ";
+                    std::cin >> numeroMesa;
+                    std::cout << "Ingrese la capacidad de la nueva mesa: ";
+                    std::cin >> capacidad;
+                    sistema.crearMesa(numeroMesa, capacidad);
+                    break;
+                }
+                case 5:
+                    std::cout << "Saliendo del sistema.\n";
+                    break;
+                default:
+                    std::cout << "Opción no válida.\n";
+            }
+        } else if (usuarioLogueado->getRol() == "cliente") {
+            switch (opcion) {
+                case 1:
+                    sistema.mostrarMesasDisponibles();
+                    break;
+                case 2: {
+                    int numeroMesa;
+                    std::cout << "Ingrese el número de mesa a reservar: ";
+                    std::cin >> numeroMesa;
+                    sistema.reservarMesa(numeroMesa);
+                    break;
+                }
+                case 3:
+                    std::cout << "Saliendo del sistema.\n";
+                    break;
+                default:
+                    std::cout << "Opción no válida.\n";
+            }
+        }
+
+    } while (opcion != 5 && usuarioLogueado->getRol() == "admin" || opcion != 3 && usuarioLogueado->getRol() == "cliente");
+
+    return 0;
 }
