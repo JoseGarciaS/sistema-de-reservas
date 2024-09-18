@@ -20,6 +20,14 @@
 #include "envParser.h"
 #include <iostream>
 
+//=======================================
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/stream/array.hpp>
+#include <bsoncxx/builder/stream/helpers.hpp>
+
+using namespace bsoncxx::builder;
+//=======================================
+
 // Data
 static ID3D11Device *g_pd3dDevice = nullptr;
 static ID3D11DeviceContext *g_pd3dDeviceContext = nullptr;
@@ -47,6 +55,12 @@ int main(int, char **)
     try
     {
         dbHandler->connect(uri);
+
+        //=== Database test ===
+
+        auto document = stream::document{} << "i" << 0 << stream::finalize;
+
+        dbHandler->createDocument("test", document);
     }
     catch (const std::exception &e)
     {
@@ -77,11 +91,11 @@ int main(int, char **)
     ImGuiIO &io = ImGui::GetIO();
     (void)io;
     io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard; // Enable Keyboard Controls
-    io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;  // Enable Gamepad Controls
 
     // Setup Dear ImGui style
-    ImGui::StyleColorsDark();
-    // ImGui::StyleColorsLight();
+    // ImGui::StyleColorsDark();
+    ImGui::StyleColorsLight();
+    // ImGui::StyleColorsClassic();
 
     // Setup Platform/Renderer backends
     ImGui_ImplWin32_Init(hwnd);
@@ -102,6 +116,8 @@ int main(int, char **)
     // io.Fonts->AddFontFromFileTTF("../../misc/fonts/Cousine-Regular.ttf", 15.0f);
     // ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
     // IM_ASSERT(font != nullptr);
+
+    io.Fonts->AddFontFromFileTTF("c:/WINDOWS/Fonts/CASCADIACODE.ttf.", 18.0f);
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 

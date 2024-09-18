@@ -4,8 +4,15 @@
 #include <mongocxx/instance.hpp>
 #include <bsoncxx/document/view.hpp>
 #include <bsoncxx/document/value.hpp>
+#include <bsoncxx/types.hpp>
+#include <vector>
+
+#include <bsoncxx/builder/stream/document.hpp>
+#include <bsoncxx/builder/stream/array.hpp>
+#include <bsoncxx/builder/stream/helpers.hpp>
 
 using namespace std;
+using namespace bsoncxx::builder;
 
 mongoDBHandler *mongoDBHandler::instance = nullptr;
 
@@ -14,6 +21,7 @@ mongoDBHandler::mongoDBHandler() : connection(nullptr) {}
 mongoDBHandler::~mongoDBHandler()
 {
     disconnect();
+    // Return an empty cursor if connection is nullptr
 }
 
 mongoDBHandler *mongoDBHandler::getInstance()
@@ -76,51 +84,85 @@ bool mongoDBHandler::ping()
     return false;
 }
 
-void mongoDBHandler::createDocument(const string &collectionName, const bsoncxx::document::view &document)
+void mongoDBHandler::createDocument(const string &collectionName, const bsoncxx::document::value &document)
 {
     if (connection != nullptr)
     {
         auto db = connection->database("Reservas");
         auto collection = db.collection(collectionName);
 
-        collection.insert_one(document);
+        auto insert_one_result = collection.insert_one(document.view());
+
+        assert(insert_one_result);
+        auto doc_id = insert_one_result->inserted_id();
+        assert(doc_id.type() == bsoncxx::type::k_oid);
+        std::cout << "Inserted document ID: " << doc_id.get_oid().value.to_string() << std::endl;
     }
 }
 
-void mongoDBHandler::readDocument(const string &collectionName, const bsoncxx::document::view &filter)
+boost::optional<bsoncxx::document::value> mongoDBHandler::findDocument(const string &collectionName, const bsoncxx::document::value &filter)
 {
     if (connection != nullptr)
     {
         auto db = connection->database("Reservas");
         auto collection = db.collection(collectionName);
 
-        auto cursor = collection.find(filter);
+        auto findOneResult = collection.find_one(filter.view());
+        return findOneResult;
+    }
+    return boost::none;
+}
 
-        for (auto &&doc : cursor)
+vector<bsoncxx::document::view> mongoDBHandler::findDocuments(const string &collectionName, const bsoncxx::document::value &filter)
+{
+
+    vector<bsoncxx::document::view> documents;
+    if (connection != nullptr)
+    {
+        auto db = connection->database("Reservas");
+        auto collection = db.collection(collectionName);
+
+        auto findResult = collection.find(filter.view());
+
+        for (auto doc : findResult)
         {
-            cout << bsoncxx::to_json(doc) << endl;
+            //   assert(doc["_id"].type() == bsoncxx::type::k_oid);
+            documents.push_back(doc);
         }
+        return documents;
     }
+    return documents;
 }
 
-void mongoDBHandler::updateDocument(const string &collectionName, const bsoncxx::document::view &filter, const bsoncxx::document::view &update)
+bool mongoDBHandler::updateDocument(const string &collectionName, const bsoncxx::document::value &filter, const bsoncxx::document::value &update)
 {
     if (connection != nullptr)
     {
         auto db = connection->database("Reservas");
         auto collection = db.collection(collectionName);
 
-        collection.update_one(filter, update);
+        auto updateOneResult = collection.update_one(filter.view(), update.view());
+        assert(updateOneResult);
+
+        bool updateSuccessful = updateOneResult && updateOneResult->modified_count() > 0;
+        return updateSuccessful;
     }
+
+    return false;
 }
 
-void mongoDBHandler::deleteDocument(const string &collectionName, const bsoncxx::document::view &filter)
+bool mongoDBHandler::deleteDocument(const string &collectionName, const bsoncxx::document::value &filter)
 {
     if (connection != nullptr)
     {
         auto db = connection->database("Reservas");
         auto collection = db.collection(collectionName);
 
-        collection.delete_one(filter);
+        auto deleteOneResult = collection.delete_one(filter.view());
+        assert(deleteOneResult);
+
+        bool deleteSuccessful = deleteOneResult && deleteOneResult->deleted_count() == 1;
+        return deleteSuccessful;
     }
+    return false;
 }
