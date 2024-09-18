@@ -1,6 +1,7 @@
 #pragma once
 #include <cstdint>
 #include <string>
+#include <vector>
 
 #include <bsoncxx/json.hpp>
 #include <mongocxx/client.hpp>
@@ -24,6 +25,7 @@ public:
   bool ping();
   void createDocument(const string &collectionName, const bsoncxx::document::value &document);
   boost::optional<bsoncxx::document::value> findDocument(const string &collectionName, const bsoncxx::document::value &filter);
+  vector<bsoncxx::document::view> findDocuments(const string &collectionName, const bsoncxx::document::value &filter);
   bool updateDocument(const string &collectionName, const bsoncxx::document::value &filter, const bsoncxx::document::value &update);
   bool deleteDocument(const string &collectionName, const bsoncxx::document::value &filter);
 
