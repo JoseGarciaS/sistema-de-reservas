@@ -49,18 +49,12 @@ mongoDBHandler *dbHandler = mongoDBHandler::getInstance();
 // Main code
 int main(int, char **)
 {
+    std::system("cls");
 
     const string uri = env->getValue("DB_URI");
-
     try
     {
         dbHandler->connect(uri);
-
-        //=== Database test ===
-
-        auto document = stream::document{} << "i" << 0 << stream::finalize;
-
-        dbHandler->createDocument("test", document);
     }
     catch (const std::exception &e)
     {
@@ -71,7 +65,7 @@ int main(int, char **)
     // ImGui_ImplWin32_EnableDpiAwareness();
     WNDCLASSEXW wc = {sizeof(wc), CS_CLASSDC, WndProc, 0L, 0L, GetModuleHandle(nullptr), nullptr, nullptr, nullptr, nullptr, L"ImGui Example", nullptr};
     ::RegisterClassExW(&wc);
-    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Dear ImGui DirectX11 Example", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr);
+    HWND hwnd = ::CreateWindowW(wc.lpszClassName, L"Sistema de Reservas", WS_OVERLAPPEDWINDOW, 100, 100, 1280, 800, nullptr, nullptr, wc.hInstance, nullptr);
 
     // Initialize Direct3D
     if (!CreateDeviceD3D(hwnd))
@@ -117,12 +111,13 @@ int main(int, char **)
     // ImFont* font = io.Fonts->AddFontFromFileTTF("c:\\Windows\\Fonts\\ArialUni.ttf", 18.0f, nullptr, io.Fonts->GetGlyphRangesJapanese());
     // IM_ASSERT(font != nullptr);
 
-    io.Fonts->AddFontFromFileTTF("c:/WINDOWS/Fonts/CASCADIACODE.ttf.", 18.0f);
+    io.Fonts->AddFontFromFileTTF("c:/WINDOWS/Fonts/segoeui.ttf", 18.0f);
 
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
 
     // Main loop
     bool done = false;
+    // app::currentWindow = new app::WindowType(app::WindowType::Main);
     while (!done)
     {
         // Poll and handle messages (inputs, window resize, etc.)
@@ -161,7 +156,8 @@ int main(int, char **)
         ImGui::NewFrame();
 
         // === App ===
-        app::RenderWindows();
+
+        app::Render();
 
         // Rendering
         ImGui::Render();

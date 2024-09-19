@@ -1,5 +1,5 @@
 #pragma once
-namespace app
+namespace reservationWindow
 {
     void Render();
 };
