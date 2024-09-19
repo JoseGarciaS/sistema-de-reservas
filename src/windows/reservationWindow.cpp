@@ -172,6 +172,7 @@ namespace reservationWindow
             if (ImGui::Button("Make reservation", buttonSize))
             {
                 step = ReservationSteps::TableReservation;
+                mode = DataMode::Insert;
             }
 
             buttonPos.y += buttonSize.y + 20.0f;
@@ -180,6 +181,7 @@ namespace reservationWindow
             if (ImGui::Button("View reservations", buttonSize))
             {
                 step = ReservationSteps::ViewReservations;
+                mode = DataMode::None;
             }
         }
 
@@ -309,24 +311,33 @@ namespace reservationWindow
 
                 if (mode == DataMode::Insert)
                 {
-                    string code = generateReservationCode();
-                    auto startTime = generateTimeStamp(selectedDate, hours[selectedStartHour]);
-                    auto endTime = generateTimeStamp(selectedDate, hours[selectedEndHour]);
-                    auto tableNumber = tables[selectedRow]["table_number"].get_int32().value;
 
-                    auto document = stream::document{} << "reservation_code" << code
-                                                       << "first_name" << firstName
-                                                       << "last_name" << lastName
-                                                       << "phone_number" << phoneNumber
-                                                       << "email_address" << emailAddress
-                                                       << "start_time" << startTime
-                                                       << "end_time" << endTime
-                                                       << "table_number" << tableNumber
-                                                       << "party_size" << partySize
-                                                       << stream::finalize;
+                    try
+                    {
 
-                    dbHandler->createDocument("reservations", document);
-                    ImGui::Text("Reservation completed successfully!");
+                        string code = generateReservationCode();
+                        auto startTime = generateTimeStamp(selectedDate, hours[selectedStartHour]);
+                        auto endTime = generateTimeStamp(selectedDate, hours[selectedEndHour]);
+                        auto tableNumber = tables[selectedRow]["table_number"].get_int32().value;
+
+                        auto document = stream::document{} << "reservation_code" << code
+                                                           << "first_name" << firstName
+                                                           << "last_name" << lastName
+                                                           << "phone_number" << phoneNumber
+                                                           << "email_address" << emailAddress
+                                                           << "start_time" << startTime
+                                                           << "end_time" << endTime
+                                                           << "table_number" << tableNumber
+                                                           << "party_size" << partySize
+                                                           << stream::finalize;
+
+                        dbHandler->createDocument("reservations", document);
+                        ImGui::Text("Reservation completed successfully!");
+                    }
+                    catch (const std::exception &e)
+                    {
+                        std::cerr << e.what() << '\n';
+                    }
                 }
                 else if (mode == DataMode::Edit)
                 {
