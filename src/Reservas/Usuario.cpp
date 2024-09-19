@@ -32,12 +32,3 @@ void Admin::mostrarMenu() const {
 }
 
 
-Cliente::Cliente(const std::string& nombre, const std::string& pass)
-    : Usuario(nombre, pass, "cliente") {}
-
-void Cliente::mostrarMenu() const {
-    std::cout << "\n--- Menú Cliente ---\n";
-    std::cout << "1. Mostrar mesas disponibles\n";
-    std::cout << "2. Reservar una mesa\n";
-    std::cout << "3. Salir\n";
-}

@@ -2,31 +2,44 @@
 #define SISTEMARESERVAS_H
 
 #include <vector>
-#include "Mesa.h"
-#include "Usuario.h"
+#include <string>
 
+#include "mongoDBHandler.h"  // Incluir el handler de MongoDB
+#include <bsoncxx/document/value.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
+#include "envParser.h"
 class SistemaReservas {
 private:
-    std::vector<Mesa> mesas;
-    std::vector<Usuario*> usuarios;  
+    mongoDBHandler *dbHandler;  // Para manejar la base de datos
+    // Lista de mesas
+    int contadorReservas;       // Contador para generar códigos únicos
+
 public:
-    
-    SistemaReservas(const std::vector<Mesa>& listaMesas, const std::vector<Usuario*>& listaUsuarios);
+    SistemaReservas();
 
     
-    void mostrarMesasDisponibles() const;
+    void mostrarMesasDisponibles(const std::string& fecha, int hora) const;
+
+   void reservarMesa(int numeroMesa, const std::string& fecha, int horaInicio, int horaFin, 
+    const std::string& nombreCliente, const std::string& apellidoCliente, const std::string& telefono, 
+    const std::string& email);
+
+    
+   bool liberarMesaPorCodigo(const std::string& codigoReserva);
+
+    void crearMesa(int numeroMesa, int capacidadMax, const std::string& descripcion);
 
    
-    bool reservarMesa(int numeroMesa);
-
-    
-    void liberarMesa(int numeroMesa);
+    std::string generarCodigoReserva(int numeroMesa, const std::string& fecha, int hora);
 
    
-    void crearMesa(int numeroMesa, int capacidad);
+    void guardarReservaEnBaseDeDatos(int numeroMesa, const std::string& fecha, int horaInicio, int horaFin, 
+    const std::string& codigoReserva, const std::string& nombreCliente, const std::string& apellidoCliente, 
+    const std::string& telefono, const std::string& email);
 
-    
-    Usuario* login(const std::string& nombreUsuario, const std::string& password) const;
+    void guardarAccionEnLog(const std::string& accion, const std::string& detalles);
+    bool existeReserva(const std::string& codigoReserva);
+    bool existeReservaEnFechaHora(const std::string& fecha, int horaInicio, int horaFin);
 };
 
-#endif 
+#endif // SISTEMARESERVAS_H

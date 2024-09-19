@@ -9,6 +9,7 @@ target_include_directories(${PROJECT_NAME} PUBLIC
     ${CMAKE_CURRENT_SOURCE_DIR}/windows
     ${CMAKE_CURRENT_SOURCE_DIR}/mongodb
     ${CMAKE_CURRENT_SOURCE_DIR}/envParser
+    ${CMAKE_CURRENT_SOURCE_DIR}/Reservas
 )
 
 configure_file(${CMAKE_SOURCE_DIR}/.env ${CMAKE_BINARY_DIR}/src/Release/.env COPYONLY)

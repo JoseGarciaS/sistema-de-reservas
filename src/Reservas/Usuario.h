@@ -27,10 +27,6 @@ public:
     void mostrarMenu() const override;
 };
 
-class Cliente : public Usuario {
-public:
-    Cliente(const std::string& nombre, const std::string& pass);
-    void mostrarMenu() const override;
-};
+
 
 #endif 

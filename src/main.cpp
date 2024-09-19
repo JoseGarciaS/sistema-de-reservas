@@ -295,96 +295,190 @@ LRESULT WINAPI WndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     return ::DefWindowProcW(hWnd, msg, wParam, lParam);
 }
 */
+
+#include "mongodb/mongoDBHandler.h"
+
 #include "Reservas/SistemaReservas.h"
 #include <iostream>
+#include <string>
+#include "envParser.h"
 
-int main() {
-    std::vector<Mesa> mesas = {
-        Mesa(1, 4),
-        Mesa(2, 2),
-        Mesa(3, 6),
-        Mesa(4, 8)
-    };
+#include <bsoncxx/json.hpp>
+#include <bsoncxx/builder/stream/document.hpp>
 
-    std::vector<Usuario*> usuarios = {
-        new Admin("admin", "admin123"),
-        new Cliente("cliente1", "password1"),
-        new Cliente("cliente2", "password2")
-    };
-    SistemaReservas sistema(mesas, usuarios);
+// Simulamos credenciales de administrador
+const std::string ADMIN_USER = "admin";
+const std::string ADMIN_PASSWORD = "1234";
 
-    std::string nombreUsuario, password;
-    Usuario* usuarioLogueado = nullptr;
+// Función para iniciar sesión como administrador
+bool loginAdmin()
+{
+    std::string usuario, password;
+    std::cout << "Ingrese usuario administrador: ";
+    std::cin >> usuario;
+    std::cout << "Ingrese contraseña: ";
+    std::cin >> password;
 
-    while (!usuarioLogueado) {
-        std::cout << "Ingrese su nombre de usuario: ";
-        std::cin >> nombreUsuario;
-        std::cout << "Ingrese su contraseña: ";
-        std::cin >> password;
-
-        usuarioLogueado = sistema.login(nombreUsuario, password);
+    if (usuario == ADMIN_USER && password == ADMIN_PASSWORD)
+    {
+        std::cout << "Acceso concedido como administrador.\n";
+        return true;
     }
+    else
+    {
+        std::cout << "Credenciales incorrectas.\n";
+        return false;
+    }
+}
+void crearMesa(SistemaReservas &sistemaReservas) {
+    int numeroMesa, capacidadMaxima;
+    std::string descripcion;
 
+    std::cout << "\nIngrese el número de mesa: ";
+    std::cin >> numeroMesa;
+    std::cout << "Ingrese la capacidad máxima de la mesa: ";
+    std::cin >> capacidadMaxima;
+    std::cout << "Ingrese la descripción de la mesa: ";
+    std::cin >> descripcion;
+    sistemaReservas.crearMesa(numeroMesa, capacidadMaxima, descripcion);
+}
+
+void crearReservacion(SistemaReservas &sistemaReservas) {
+    int numeroMesa;
+    std::string codigoReserva, nombre, apellido, telefono, email;
+    std::string fecha, horaInicio, horaFin;
+
+    std::cout << "\nIngrese el número de mesa: ";
+    std::cin >> numeroMesa;
+    std::cout << "Ingrese el código de reserva: ";
+    std::cin >> codigoReserva;
+    std::cout << "Ingrese el nombre del cliente: ";
+    std::cin >> nombre;
+    std::cout << "Ingrese el apellido del cliente: ";
+    std::cin >> apellido;
+    std::cout << "Ingrese el teléfono del cliente: ";
+    std::cin >> telefono;
+    std::cout << "Ingrese el email del cliente: ";
+    std::cin >> email;
+    std::cout << "Ingrese la fecha de la reserva (YYYY-MM-DD): ";
+    std::cin >> fecha;
+    std::cout << "Ingrese la hora de inicio (HH:MM): ";
+    std::cin >> horaInicio;
+    std::cout << "Ingrese la hora de fin (HH:MM): ";
+    std::cin >> horaFin;
+
+    sistemaReservas.reservarMesa(numeroMesa, fecha, std::stoi(horaInicio),std::stoi(horaFin), nombre, apellido, telefono, email);
+}
+
+void mostrarMesasDisponibles(SistemaReservas &sistemaReservas) {
+    std::string fecha;
+    int hora;
+
+    std::cout << "\nIngrese la fecha (YYYY-MM-DD): ";
+    std::cin >> fecha;
+    std::cout << "Ingrese la hora (24h, solo la hora): ";
+    std::cin >> hora;
+
+    sistemaReservas.mostrarMesasDisponibles(fecha, hora);
+}
+void buscarReservacion(SistemaReservas &sistemaReservas) {
+    std::string fecha;
+    int horaInicio, horaFin;
+
+    std::cout << "\nIngrese la fecha (YYYY-MM-DD): ";
+    std::cin >> fecha;
+    std::cout << "Ingrese la hora inicio: ";
+    std::cin >> horaInicio;
+   std::cout << "Ingrese la hora fin ";
+    std::cin >> horaFin;
+    bool existe = sistemaReservas.existeReservaEnFechaHora(fecha, horaInicio, horaFin);
+    if (existe) {
+        std::cout << "Existe una reservación en esa fecha y hora." << std::endl;
+    } else {
+        std::cout << "No hay reservaciones en esa fecha y hora." << std::endl;
+    }
+}
+
+void liberarMesa(SistemaReservas &sistemaReservas) {
+    std::string codigoReserva;
+
+    std::cout << "\nIngrese el código de reserva: ";
+    std::cin >> codigoReserva;
+
+    if (sistemaReservas.liberarMesaPorCodigo(codigoReserva)) {
+        std::cout << "Mesa liberada exitosamente." << std::endl;
+    } else {
+        std::cout << "No se encontró ninguna mesa con ese código de reserva." << std::endl;
+    }
+}
+
+void mostrarMenu(SistemaReservas &sistemaReservas) {
     int opcion;
     do {
-        usuarioLogueado->mostrarMenu();
+        std::cout << "\n=== Menu del Sistema de Reservas ===\n";
+        std::cout << "1. Crear Mesa\n";
+        std::cout << "2. Crear Reservación\n";
+        std::cout << "3. Mostrar Mesas Disponibles\n";
+        std::cout << "4. Buscar Reservación (Fecha y Hora)\n";
+        std::cout << "5. Liberar Mesa (por Código de Reserva)\n";
+        std::cout << "6. Salir\n";
+        std::cout << "Seleccione una opción: ";
         std::cin >> opcion;
 
-        if (usuarioLogueado->getRol() == "admin") {
-            switch (opcion) {
-                case 1:
-                    sistema.mostrarMesasDisponibles();
-                    break;
-                case 2: {
-                    int numeroMesa;
-                    std::cout << "Ingrese el número de mesa a reservar: ";
-                    std::cin >> numeroMesa;
-                    sistema.reservarMesa(numeroMesa);
-                    break;
-                }
-                case 3: {
-                    int numeroMesa;
-                    std::cout << "Ingrese el número de mesa a liberar: ";
-                    std::cin >> numeroMesa;
-                    sistema.liberarMesa(numeroMesa);
-                    break;
-                }
-                case 4: {
-                    int numeroMesa, capacidad;
-                    std::cout << "Ingrese el número de la nueva mesa: ";
-                    std::cin >> numeroMesa;
-                    std::cout << "Ingrese la capacidad de la nueva mesa: ";
-                    std::cin >> capacidad;
-                    sistema.crearMesa(numeroMesa, capacidad);
-                    break;
-                }
-                case 5:
-                    std::cout << "Saliendo del sistema.\n";
-                    break;
-                default:
-                    std::cout << "Opción no válida.\n";
-            }
-        } else if (usuarioLogueado->getRol() == "cliente") {
-            switch (opcion) {
-                case 1:
-                    sistema.mostrarMesasDisponibles();
-                    break;
-                case 2: {
-                    int numeroMesa;
-                    std::cout << "Ingrese el número de mesa a reservar: ";
-                    std::cin >> numeroMesa;
-                    sistema.reservarMesa(numeroMesa);
-                    break;
-                }
-                case 3:
-                    std::cout << "Saliendo del sistema.\n";
-                    break;
-                default:
-                    std::cout << "Opción no válida.\n";
-            }
+        switch (opcion) {
+            case 1:
+                crearMesa(sistemaReservas);
+                break;
+            case 2:
+                crearReservacion(sistemaReservas);
+                break;
+            case 3:
+                mostrarMesasDisponibles(sistemaReservas);
+                break;
+            case 4:
+                buscarReservacion(sistemaReservas);
+                break;
+            case 5:
+                liberarMesa(sistemaReservas);
+                break;
+            case 6:
+                std::cout << "Saliendo del sistema..." << std::endl;
+                break;
+            default:
+                std::cout << "Opción no válida. Intente nuevamente." << std::endl;
         }
+    } while (opcion != 6);
+}
 
-    } while (opcion != 5 && usuarioLogueado->getRol() == "admin" || opcion != 3 && usuarioLogueado->getRol() == "cliente");
+   
 
+int main()
+{
+
+ envParser *env = envParser::getInstance();
+    mongoDBHandler *dbHandler = mongoDBHandler::getInstance();
+
+    const string uri = env->getValue("DB_URI");
+    try
+    {
+        dbHandler->connect(uri);
+    }
+    catch (const std::exception &e)
+    {
+        std::cout << "Exception: " << e.what() << std::endl;
+        }
+    
+     if (dbHandler->ping())
+        {
+            std::cout << "Conexión exitosa\n";
+        }
+        else
+        {
+            std::cout << "Error en la conexión\n";
+        }
+    SistemaReservas sistemaReservas;
+
+    mostrarMenu(sistemaReservas);
+  
     return 0;
 }
