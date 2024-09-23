@@ -50,7 +50,7 @@ namespace app
                     currentWindow = Logs;
                 }
 
-                if (ImGui::Selectable("Unit Testing", currentWindow == UnitTesting))
+                if (ImGui::Selectable("", currentWindow == UnitTesting))
                 {
                     currentWindow = UnitTesting;
                 }

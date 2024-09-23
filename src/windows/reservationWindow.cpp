@@ -32,7 +32,7 @@ namespace reservationWindow
         // gmtime_s(&t, &currentTime);
 
         static int selectedStartHour = 0;
-        static int selectedEndHour = 0;
+        static int selectedEndHour = 1;
         static int partySize = 1;
         static int selectedRow = -1;
         static int selectedReservation = -1;
@@ -65,6 +65,7 @@ namespace reservationWindow
         static string reservationCode = "";
 
         static bool reservationSubmitted = false;
+        static bool validTime = false;
 
     }
 
@@ -130,11 +131,11 @@ namespace reservationWindow
             return string(buffer);
         }
 
-        void resetFormFields()
+        void resetValues()
         {
             reservationSubmitted = false;
             selectedStartHour = 0;
-            selectedEndHour = 0;
+            selectedEndHour = 1;
             partySize = 1;
             selectedRow = -1;
             std::fill(std::begin(firstName), std::end(firstName), '\0');
@@ -203,6 +204,16 @@ namespace reservationWindow
                 ImGui::Text("End Time");
                 ImGui::Combo("##end", &selectedEndHour, hours, IM_ARRAYSIZE(hours));
 
+                if (selectedStartHour >= selectedEndHour || selectedEndHour <= selectedStartHour || selectedStartHour == selectedEndHour)
+                {
+                    ImGui::TextColored(ImVec4(1, 0, 0, 1), "Error: Select a valid time range.");
+                    validTime = false;
+                }
+                else
+                {
+                    validTime = true;
+                }
+
                 ImGui::Text("Party Size");
 
                 ImGui::SliderInt("##partySize", &partySize, 1, 10);
@@ -216,11 +227,11 @@ namespace reservationWindow
 
                 if (ImGui::Button("Check availability"))
                 {
-                    auto filter = stream::document{} << stream::finalize;
+                    auto filter = stream::document{} << "active" << true << stream::finalize;
                     tables = dbHandler->findDocuments("tables", filter);
                 }
 
-                if (selectedRow != -1)
+                if (selectedRow != -1 && validTime)
                 {
                     ImGui::SameLine();
                     if (ImGui::Button("Next"))
@@ -400,7 +411,7 @@ namespace reservationWindow
 
             if (ImGui::Button("Finish"))
             {
-                resetFormFields();
+                resetValues();
                 status = "";
                 step = ReservationSteps::ActionSelect;
             }
@@ -425,9 +436,16 @@ namespace reservationWindow
 
             if (ImGui::Button("Update"))
             {
-                reservations.clear();
-                auto filter = stream::document{} << stream::finalize;
-                reservations = dbHandler->findDocuments("reservations", filter);
+
+                try
+                {
+                    auto filter = stream::document{} << stream::finalize;
+                    reservations = dbHandler->findDocuments("reservations", filter);
+                }
+                catch (const std::exception &e)
+                {
+                    std::cerr << e.what() << '\n';
+                }
             }
 
             if (selectedReservation != -1)
@@ -447,7 +465,7 @@ namespace reservationWindow
                     reservationCode = doc["reservation_code"].get_string().value.data();
 
                     time_t startTimeT = std::chrono::system_clock::to_time_t(startTime);
-                    selectedDate = *std::localtime(&startTimeT);
+                    localtime_s(&selectedDate, &startTimeT);
 
                     strncpy_s(firstName, doc["first_name"].get_string().value.data(), sizeof(firstName) - 1);
                     firstName[sizeof(firstName) - 1] = '\0';
@@ -481,11 +499,16 @@ namespace reservationWindow
                 {
                     auto code = reservations[selectedReservation]["reservation_code"].get_string().value.data();
                     auto filter = stream::document{} << "reservation_code" << code << stream::finalize;
+
+                    auto log = stream::document{} << "id" << code
+                                                  << "action" << "Delete"
+                                                  << "action_object" << "Reservation"
+                                                  << "timestamp" << bsoncxx::types::b_date{chrono::system_clock::now()} << stream::finalize;
+
+                    dbHandler->createDocument("logs", log);
+
                     dbHandler->deleteDocument("reservations", filter);
                     selectedReservation = -1;
-
-                    filter = stream::document{} << stream::finalize;
-                    reservations = dbHandler->findDocuments("reservations", filter);
                 }
             }
 
@@ -507,48 +530,57 @@ namespace reservationWindow
 
                 for (const auto &doc : reservations)
                 {
-                    auto code = doc["reservation_code"].get_string().value.data();
-                    auto firstName = doc["first_name"].get_string().value.data();
-                    auto lastName = doc["last_name"].get_string().value.data();
 
-                    auto phoneNumber = doc["phone_number"].get_string().value.data();
-                    auto emailAddress = doc["email_address"].get_string().value.data();
-                    auto tableNumber = doc["table_number"].get_int32().value;
-                    auto partySize = doc["party_size"].get_int32().value;
-
-                    auto startTime = doc["start_time"].get_date();
-                    auto endTime = doc["end_time"].get_date();
-                    string startStr = b_dateToString(startTime);
-                    string endStr = b_dateToString(endTime);
-
-                    char label[32];
-                    sprintf_s(label, "%s", code);
-
-                    ImGui::TableNextRow();
-                    ImGui::TableNextColumn();
-                    if (ImGui::Selectable(label, selectedReservation == row, ImGuiSelectableFlags_SpanAllColumns))
+                    try
                     {
-                        selectedReservation = row;
+
+                        auto code = doc["reservation_code"].get_string().value.to_string();
+                        auto firstName = doc["first_name"].get_string().value.data();
+                        auto lastName = doc["last_name"].get_string().value.data();
+
+                        auto phoneNumber = doc["phone_number"].get_string().value.data();
+                        auto emailAddress = doc["email_address"].get_string().value.data();
+                        auto tableNumber = doc["table_number"].get_int32().value;
+                        auto partySize = doc["party_size"].get_int32().value;
+
+                        auto startTime = doc["start_time"].get_date();
+                        auto endTime = doc["end_time"].get_date();
+                        string startStr = b_dateToString(startTime);
+                        string endStr = b_dateToString(endTime);
+
+                        char label[32];
+                        sprintf_s(label, "%s", code);
+
+                        ImGui::TableNextRow();
+                        ImGui::TableNextColumn();
+                        if (ImGui::Selectable(label, selectedReservation == row, ImGuiSelectableFlags_SpanAllColumns))
+                        {
+                            selectedReservation = row;
+                        }
+
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", firstName);
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", lastName);
+                        ImGui::TableNextColumn();
+                        ImGui::Text(startStr.c_str());
+                        ImGui::TableNextColumn();
+                        ImGui::Text(endStr.c_str());
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", phoneNumber);
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%s", emailAddress);
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%d", tableNumber);
+                        ImGui::TableNextColumn();
+                        ImGui::Text("%d", partySize);
+
+                        row++;
                     }
-
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%s", firstName);
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%s", lastName);
-                    ImGui::TableNextColumn();
-                    ImGui::Text(startStr.c_str());
-                    ImGui::TableNextColumn();
-                    ImGui::Text(endStr.c_str());
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%s", phoneNumber);
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%s", emailAddress);
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%d", tableNumber);
-                    ImGui::TableNextColumn();
-                    ImGui::Text("%d", partySize);
-
-                    row++;
+                    catch (const std::exception &e)
+                    {
+                        std::cerr << e.what() << '\n';
+                    }
                 }
 
                 ImGui::EndTable();

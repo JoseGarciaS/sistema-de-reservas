@@ -206,7 +206,6 @@ namespace tableWindow
 
             if (ImGui::Button("Update"))
             {
-                tables.clear();
                 auto filter = stream::document{} << stream::finalize;
                 tables = dbHandler->findDocuments("tables", filter);
             }

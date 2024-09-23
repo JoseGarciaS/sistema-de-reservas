@@ -15,10 +15,8 @@ namespace logsWindow
     // Private variables
     namespace
     {
-
         mongoDBHandler *dbHandler = mongoDBHandler::getInstance();
         static vector<bsoncxx::document::view> logs;
-
     }
 
     // Utility functions
@@ -58,7 +56,6 @@ namespace logsWindow
 
             if (ImGui::Button("Update"))
             {
-                logs.clear();
                 auto filter = stream::document{} << stream::finalize;
                 logs = dbHandler->findDocuments("logs", filter);
             }
