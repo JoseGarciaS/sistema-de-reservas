@@ -51,7 +51,7 @@ namespace reservationWindow
         enum DataMode
         {
             None,
-            Insert,
+            Create,
             Edit
         };
 
@@ -145,6 +145,8 @@ namespace reservationWindow
             selectedDate = *std::localtime(&currentTime);
             reservationCode = "";
             selectedReservation = -1;
+            reservations.clear();
+            tables.clear();
 
             mode = DataMode::None;
         }
@@ -163,7 +165,6 @@ namespace reservationWindow
             ImGui::Text("Select an action");
             ImGui::Separator();
 
-            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
             ImGui::SetCursorPos(childPos);
             ImVec2 buttonSize = ImVec2(width * 0.8f, 50.0f);
             ImVec2 buttonPos = ImVec2((width - buttonSize.x) / 2.0f, height * 0.3f);
@@ -172,7 +173,7 @@ namespace reservationWindow
             if (ImGui::Button("Make reservation", buttonSize))
             {
                 step = ReservationSteps::TableReservation;
-                mode = DataMode::Insert;
+                mode = DataMode::Create;
             }
 
             buttonPos.y += buttonSize.y + 20.0f;
@@ -229,7 +230,7 @@ namespace reservationWindow
                 }
 
                 ImGui::TableNextColumn();
-                ImGui::Text("Available tables");
+                ImGui::Text("Tables");
 
                 if (ImGui::BeginTable("Available tables", 3, ImGuiTableFlags_Borders | ImGuiTableFlags_RowBg, {0, 0}))
                 {
@@ -267,8 +268,6 @@ namespace reservationWindow
                 }
 
                 ImGui::EndTable();
-
-                ImGui::PopStyleColor();
             }
         }
 
@@ -305,20 +304,26 @@ namespace reservationWindow
 
         void RenderCompleted()
         {
+            static string status = "";
 
             if (!reservationSubmitted)
             {
 
-                if (mode == DataMode::Insert)
+                if (mode == DataMode::Create)
                 {
-
                     try
                     {
-
                         string code = generateReservationCode();
                         auto startTime = generateTimeStamp(selectedDate, hours[selectedStartHour]);
                         auto endTime = generateTimeStamp(selectedDate, hours[selectedEndHour]);
                         auto tableNumber = tables[selectedRow]["table_number"].get_int32().value;
+
+                        auto log = stream::document{} << "id" << code
+                                                      << "action" << "Create"
+                                                      << "action_object" << "Reservation"
+                                                      << "timestamp" << bsoncxx::types::b_date{chrono::system_clock::now()} << stream::finalize;
+
+                        dbHandler->createDocument("logs", log);
 
                         auto document = stream::document{} << "reservation_code" << code
                                                            << "first_name" << firstName
@@ -332,11 +337,13 @@ namespace reservationWindow
                                                            << stream::finalize;
 
                         dbHandler->createDocument("reservations", document);
-                        ImGui::Text("Reservation completed successfully!");
+
+                        status = "Reservation submitted successfully!";
                     }
                     catch (const std::exception &e)
                     {
                         std::cerr << e.what() << '\n';
+                        status = "An error has occurred!";
                     }
                 }
                 else if (mode == DataMode::Edit)
@@ -344,13 +351,22 @@ namespace reservationWindow
 
                     try
                     {
+
                         auto filter = stream::document{} << "reservation_code" << reservationCode << stream::finalize;
 
                         auto startTime = generateTimeStamp(selectedDate, hours[selectedStartHour]);
                         auto endTime = generateTimeStamp(selectedDate, hours[selectedEndHour]);
                         auto tableNumber = tables[selectedRow]["table_number"].get_int32().value;
 
-                        auto update = stream::document{} << "first_name" << firstName
+                        auto log = stream::document{} << "id" << reservationCode
+                                                      << "action" << "Update"
+                                                      << "action_object" << "Reservation"
+                                                      << "timestamp" << bsoncxx::types::b_date{chrono::system_clock::now()} << stream::finalize;
+
+                        dbHandler->createDocument("logs", log);
+
+                        auto update = stream::document{} << "$set" << stream::open_document
+                                                         << "first_name" << firstName
                                                          << "last_name" << lastName
                                                          << "phone_number" << phoneNumber
                                                          << "email_address" << emailAddress
@@ -358,22 +374,34 @@ namespace reservationWindow
                                                          << "end_time" << endTime
                                                          << "table_number" << tableNumber
                                                          << "party_size" << partySize
-                                                         << stream::finalize;
+                                                         << stream::close_document << stream::finalize;
 
-                        dbHandler->updateDocument("reservations", filter, update);
-                        ImGui::Text("Reservation updated successfully!");
+                        try
+                        {
+                            dbHandler->updateDocument("reservations", filter, update);
+                            status = "Reservation updated successfully!";
+                        }
+                        catch (const std::exception &e)
+                        {
+                            status = "An error has occurred!";
+                            std::cerr << e.what() << '\n';
+                        }
                     }
                     catch (const std::invalid_argument &e)
                     {
                         std::cerr << e.what() << '\n';
+                        status = "An error has occurred!";
                     }
                 }
                 reservationSubmitted = true;
             }
 
+            ImGui::Text(status.c_str());
+
             if (ImGui::Button("Finish"))
             {
                 resetFormFields();
+                status = "";
                 step = ReservationSteps::ActionSelect;
             }
         }

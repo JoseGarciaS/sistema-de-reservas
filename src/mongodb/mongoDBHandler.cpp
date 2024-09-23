@@ -96,11 +96,10 @@ void mongoDBHandler::createDocument(const string &collectionName, const bsoncxx:
         assert(insert_one_result);
         auto doc_id = insert_one_result->inserted_id();
         assert(doc_id.type() == bsoncxx::type::k_oid);
-        std::cout << "Inserted document ID: " << doc_id.get_oid().value.to_string() << std::endl;
     }
 }
 
-boost::optional<bsoncxx::document::value> mongoDBHandler::findDocument(const string &collectionName, const bsoncxx::document::value &filter)
+bsoncxx::document::view mongoDBHandler::findDocument(const string &collectionName, const bsoncxx::document::value &filter)
 {
     if (connection != nullptr)
     {
@@ -108,9 +107,11 @@ boost::optional<bsoncxx::document::value> mongoDBHandler::findDocument(const str
         auto collection = db.collection(collectionName);
 
         auto findOneResult = collection.find_one(filter.view());
-        return findOneResult;
+
+        return findOneResult->view();
     }
-    return boost::none;
+
+    return bsoncxx::document::view();
 }
 
 vector<bsoncxx::document::view> mongoDBHandler::findDocuments(const string &collectionName, const bsoncxx::document::value &filter)
@@ -126,7 +127,7 @@ vector<bsoncxx::document::view> mongoDBHandler::findDocuments(const string &coll
 
         for (auto doc : findResult)
         {
-            //   assert(doc["_id"].type() == bsoncxx::type::k_oid);
+            assert(doc["_id"].type() == bsoncxx::type::k_oid);
             documents.push_back(doc);
         }
         return documents;

@@ -1,6 +1,8 @@
 #include "app.h"
 #include "imgui.h"
 #include "reservationWindow.h"
+#include "tableWindow.h"
+#include "logsWindow.h"
 
 namespace app
 {
@@ -59,6 +61,7 @@ namespace app
 
         void RenderContent()
         {
+            ImGui::PushStyleVar(ImGuiStyleVar_FrameRounding, 12.0f);
             ImVec2 windowSize = ImGui::GetIO().DisplaySize;
             ImVec2 size = ImVec2(windowSize.x * 0.785f, windowSize.y * 0.90f);
             ImGui::SameLine();
@@ -68,13 +71,14 @@ namespace app
                 {
                 case Reservations:
                     reservationWindow::Render();
-
                     break;
                 case Tables:
                     ImGui::Text("Tables");
+                    tableWindow::Render();
                     break;
                 case Logs:
                     ImGui::Text("Logs");
+                    logsWindow::Render();
                     break;
                 case UnitTesting:
                     ImGui::Text("Unit Testing");
