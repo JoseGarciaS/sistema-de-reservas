@@ -198,14 +198,15 @@ namespace tableWindow
             ImGui::Text("View Tables");
             ImGui::Separator();
 
-            if (tables.empty())
-            {
-                auto filter = stream::document{} << stream::finalize;
-                tables = dbHandler->findDocuments("tables", filter);
-            }
+            // if (tables.empty())
+            // {
+            //     auto filter = stream::document{} << stream::finalize;
+            //     tables = dbHandler->findDocuments("tables", filter);
+            // }
 
             if (ImGui::Button("Update"))
             {
+                tables.clear();
                 auto filter = stream::document{} << stream::finalize;
                 tables = dbHandler->findDocuments("tables", filter);
             }

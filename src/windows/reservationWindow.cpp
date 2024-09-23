@@ -411,11 +411,11 @@ namespace reservationWindow
             ImGui::Text("View Reservations");
             ImGui::Separator();
 
-            if (reservations.empty())
-            {
-                auto filter = stream::document{} << stream::finalize;
-                reservations = dbHandler->findDocuments("reservations", filter);
-            }
+            // if (reservations.empty())
+            // {
+            //     auto filter = stream::document{} << stream::finalize;
+            //     reservations = dbHandler->findDocuments("reservations", filter);
+            // }
 
             if (ImGui::Button("Back"))
             {
@@ -425,6 +425,7 @@ namespace reservationWindow
 
             if (ImGui::Button("Update"))
             {
+                reservations.clear();
                 auto filter = stream::document{} << stream::finalize;
                 reservations = dbHandler->findDocuments("reservations", filter);
             }

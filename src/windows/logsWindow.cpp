@@ -49,14 +49,15 @@ namespace logsWindow
             ImGui::Text("View Logs");
             ImGui::Separator();
 
-            if (logs.empty())
-            {
-                auto filter = stream::document{} << stream::finalize;
-                logs = dbHandler->findDocuments("logs", filter);
-            }
+            // if (logs.empty())
+            // {
+            //     auto filter = stream::document{} << stream::finalize;
+            //     logs = dbHandler->findDocuments("logs", filter);
+            // }
 
             if (ImGui::Button("Update"))
             {
+                logs.clear();
                 auto filter = stream::document{} << stream::finalize;
                 logs = dbHandler->findDocuments("logs", filter);
             }
