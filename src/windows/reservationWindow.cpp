@@ -227,7 +227,8 @@ namespace reservationWindow
 
                 if (ImGui::Button("Check availability"))
                 {
-                    auto filter = stream::document{} << "active" << true << stream::finalize;
+                    auto filter = stream::document{} << "active" << true << "max_capacity" << bsoncxx::builder::stream::open_document << "$gte" << partySize << bsoncxx::builder::stream::close_document << stream::finalize;
+
                     tables = dbHandler->findDocuments("tables", filter);
                 }
 
