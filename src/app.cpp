@@ -95,14 +95,6 @@ namespace app
         {
             ImVec2 windowSize = ImGui::GetIO().DisplaySize;
             ImVec2 size = ImVec2(windowSize.x * 0.99f, windowSize.y * 0.075f);
-
-            if (ImGui::BeginChild("Actions", size, ImGuiChildFlags_Border, ImGuiWindowFlags_NoSavedSettings))
-            {
-                if (ImGui::Button("Add"))
-                {
-                }
-                ImGui::EndChild();
-            }
         }
 
     }

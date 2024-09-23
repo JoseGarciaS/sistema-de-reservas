@@ -38,6 +38,7 @@ namespace logsWindow
             strftime(buffer, sizeof(buffer), "%Y-%m-%d %H:%M:%S", &tm);
             return string(buffer);
         }
+
     }
 
     // Render functions
@@ -88,7 +89,7 @@ namespace logsWindow
                     ImGui::TableNextColumn();
                     ImGui::Text("%s", actionObject);
                     ImGui::TableNextColumn();
-                    ImGui::Text("%s", b_dateToString(timestamp));
+                    ImGui::Text("%s", b_dateToString(timestamp).c_str());
 
                     row++;
                 }
